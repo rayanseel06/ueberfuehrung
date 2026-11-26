@@ -269,7 +269,7 @@ function clone(x) { return JSON.parse(JSON.stringify(x)); }
 let uid = Date.now();
 const newKey = () => 'k' + (uid++).toString(36);
 function ensureKeys(d) {
-  ['days', 'orders', 'einnahmen', 'ausgaben', 'checkliste'].forEach((c) => (d[c] || (d[c] = [])).forEach((x) => { if (!x._k) x._k = newKey(); }));
+  ['days', 'orders', 'einnahmen', 'ausgaben', 'checkliste', 'geraete'].forEach((c) => (d[c] || (d[c] = [])).forEach((x) => { if (!x._k) x._k = newKey(); }));
   d.settings = Object.assign(clone(SEED.settings), d.settings || {});
   d.kvGezahlt = d.kvGezahlt || {};
   d.meta = d.meta || {};
@@ -668,12 +668,42 @@ function syncPanel() {
   if (!Sync.enabled) return h + '<p class="mute small">Noch nicht eingerichtet. Die App speichert nur auf diesem Gerät.</p></section>';
   if (Sync.user) {
     return h + '<p class="small" style="margin-bottom:12px">Angemeldet als <b>' + esc(Sync.user.email) + '</b>. Änderungen gleichen sich automatisch ab, auch nach Offline-Phasen.' + (st.state === 'fehler' ? ' <span style="color:var(--red)">' + esc(st.text) + '</span>' : '') + '</p>'
-      + '<div class="row"><button class="btn" data-act="sync-now">Jetzt abgleichen</button><button class="btn ghost" data-act="sync-out">Abmelden</button></div></section>';
+      + '<div class="row"><button class="btn" data-act="sync-now">Jetzt abgleichen</button><button class="btn ghost" data-act="sync-out">Abmelden</button></div>' + pushBlock() + '</section>';
   }
   return h + '<p class="mute small" style="margin-bottom:12px">Einmal pro Gerät anmelden, dann gleichen sich iPhone und Mac automatisch ab.' + (st.text ? ' <span style="color:var(--red)">' + esc(st.text) + '</span>' : '') + '</p>'
     + '<form class="form-grid" data-act-submit="sync-login"><label class="f wide">E-Mail<input type="email" name="email" autocomplete="username" required></label><label class="f wide">Passwort<input type="password" name="pw" autocomplete="current-password" minlength="8" required></label>'
     + '<div class="row full"><button class="btn primary" type="submit" name="mode" value="in">Anmelden</button><button class="btn" type="submit" name="mode" value="up">Konto anlegen</button></div><p class="warn-line bad full" id="syncerr" hidden></p></form></section>';
 }
+// ---------- Benachrichtigungen (Web-Push vom Auftrags-Check) ----------
+const DEVICE_KEY = localStorage.getItem('ueberfuehrung.geraet') || (() => { const k = 'g' + newKey(); localStorage.setItem('ueberfuehrung.geraet', k); return k; })();
+const pushReady = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+function pushBlock() {
+  const meins = D.geraete.find((g) => g._k === DEVICE_KEY);
+  const andere = D.geraete.filter((g) => g._k !== DEVICE_KEY).map((g) => g.name).join(', ');
+  let h = '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"><h3 style="margin-bottom:6px">Benachrichtigungen</h3>';
+  if (!pushReady() || !window.SYNC_CONFIG.pushKey) return h + '<p class="small mute">Auf diesem Gerät nicht möglich. Auf dem iPhone: die App vom Home-Bildschirm aus öffnen (iOS 16.4 oder neuer).</p></div>';
+  h += '<p class="small mute" style="margin-bottom:10px">Der Auftrags-Check meldet neue passende Aufträge als Push.' + (andere ? ' Aktiv auch auf: ' + esc(andere) + '.' : '') + '</p>';
+  return h + (meins && Notification.permission === 'granted'
+    ? '<div class="row"><span class="tag good">' + ic('check') + 'aktiv auf diesem Gerät</span><button class="btn sm ghost" data-act="push-off">Ausschalten</button></div></div>'
+    : '<button class="btn primary" data-act="push-on">Benachrichtigungen aktivieren</button></div>');
+}
+function b64ToBytes(s) { const b = atob((s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, (c) => c.charCodeAt(0)); }
+async function pushOn() {
+  try {
+    if (await Notification.requestPermission() !== 'granted') return toast('Benachrichtigungen wurden nicht erlaubt (iPhone: Einstellungen › Mitteilungen › Überführung).');
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(window.SYNC_CONFIG.pushKey) });
+    const name = /iPhone|iPad/.test(navigator.userAgent) ? 'iPhone' : /Mac/.test(navigator.userAgent) ? 'Mac' : 'Gerät';
+    D.geraete = D.geraete.filter((g) => g._k !== DEVICE_KEY).concat([{ _k: DEVICE_KEY, name, sub: sub.toJSON(), seit: todayISO() }]);
+    save(); render(); toast('Benachrichtigungen sind an.');
+  } catch (x) { toast('Aktivieren fehlgeschlagen: ' + x.message); }
+}
+async function pushOff() {
+  const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+  if (sub) await sub.unsubscribe().catch(() => {});
+  D.geraete = D.geraete.filter((g) => g._k !== DEVICE_KEY); save(); render(); toast('Benachrichtigungen aus.');
+}
+
 document.addEventListener('submit', async (e) => {
   const f = e.target; if (f.dataset.actSubmit !== 'sync-login') return;
   e.preventDefault();
@@ -799,6 +829,8 @@ const ACT = {
     if (confirm('Alle Daten in diesem Browser löschen? Ohne exportierte Sicherung sind sie weg.')) { D = ensureKeys(clone(SEED)); persist(); lastSaved = clone(D); ui.day = null; render(); toast('Lokale Daten gelöscht.'); }
   },
   'sync-now': () => Sync.syncNow(),
+  'push-on': () => pushOn(),
+  'push-off': () => pushOff(),
   'sync-out': () => { if (confirm('Abmelden? Die Daten bleiben auf diesem Gerät, werden aber nicht mehr abgeglichen.')) Sync.signOut(); },
   csv: (d) => {
     const n2 = (x) => (x === '' || x == null ? '' : String(C.r2(+x)).replace('.', ','));

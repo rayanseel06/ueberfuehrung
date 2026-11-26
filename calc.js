@@ -221,7 +221,61 @@
   // ---------- Sync ----------
   // Jedes Element trägt `_k` (Schlüssel) und `_t` (letzte Änderung, ms). Gelöschtes steht in `_tomb[_k] = Zeit`.
   // Einstellungen und kvGezahlt tragen ihre Zeit in `_st`. Neuere Änderung gewinnt; Löschen gewinnt, wenn es nicht älter ist.
-  const COLLS = ['days', 'orders', 'einnahmen', 'ausgaben', 'checkliste'];
+  // ---------- Ketten-Suche (Auto-Check) ----------
+  const ortName = (s) => { const m = String(s || '').match(/^\s*(\d{5})?\s*([^(,]+)/); return m ? m[2].trim().toLowerCase() : ''; };
+  const plz2 = (s) => (String(s || '').match(/^\s*(\d{2})\d{3}/) || [])[1];
+
+  // Minuten vom Ziel `a` zum Abholort `b`; null = nicht sinnvoll verbindbar
+  function wegZwischen(nach, von, wege) {
+    const x = ortName(nach), y = ortName(von);
+    const w = wege && (wege[x + '|' + y] ?? wege[y + '|' + x]);
+    if (w != null) return num(w);
+    if (x && x === y) return 15;
+    // shortcut: gleiche PLZ-Region (erste 2 Ziffern) = ca. 45 Min. Nahverkehr; genauer über opts.wege
+    if (plz2(nach) && plz2(nach) === plz2(von)) return 45;
+    return null;
+  }
+
+  // Probiert jede Kette aus bis zu `maxTouren` Aufträgen desselben Tages durch. Eine Kette zählt nur, wenn
+  // alle pünktlich sind, die Wartezeit je Auftrag ≤ maxWartenH ist, sie ≥ Mindest-€/Std. bringt (Haustür bis Haustür)
+  // und das letzte Ziel wieder am Startort oder in einem erlaubten Endort liegt.
+  // Kandidat: { auftragsId, date, von, nach, ab, bis, km, preis, anreise, heim, weg? }  (anreise/heim in Min. ab/bis Wohnort)
+  function findChains(cands, s, opts) {
+    opts = Object.assign({ maxTouren: 3, maxWartenH: 2, maxAnreise: 150, wege: {} }, opts || {});
+    const byDate = {};
+    cands.forEach((c) => { if (c && c.date && c.km > 0 && c.preis > 0) (byDate[c.date] = byDate[c.date] || []).push(c); });
+    const out = {};
+    Object.entries(byDate).forEach(([date, list]) => {
+      const found = [];
+      const bewerte = (kette) => {
+        const first = kette[0], last = kette[kette.length - 1];
+        const weg0 = first.weg ?? 15, ab0 = parseTime(first.ab) ?? 8;
+        const orders = kette.map((c, i) => ({
+          id: 'c' + i, date, seq: i, status: 'idee', von: c.von, nach: c.nach, ab: c.ab || '', bis: c.bis || '',
+          km: num(c.km), preis: num(c.preis), extra: 0,
+          weg: i === 0 ? weg0 : wegZwischen(kette[i - 1].nach, c.von, opts.wege),
+          anreise: i === 0 ? num(c.anreise) : 0, heim: i === kette.length - 1 ? num(c.heim) : 0,
+        }));
+        const t = planDay({ date, start: ortName(first.von), zug: fmtTime(Math.max(0, ab0 - weg0 / 60)) }, orders, Object.assign({}, s, { limit: 99 }));
+        const endeOk = ortName(last.nach) === ortName(first.von) || endortOk(last.nach, s.endorte);
+        if (!endeOk || t.rows.some((r) => !r.puenktlich || r.warten > opts.maxWartenH) || t.eh < s.minEh) return;
+        found.push({ auftragsIds: kette.map((c) => String(c.auftragsId)), touren: kette.length, netto: t.netto, std: r2(t.std), euroProStunde: r2(t.eh),
+          los: fmtTime(t.los), zurueck: fmtTime(t.zurueck), strecke: kette.map((c) => ortName(c.von)).concat(ortName(last.nach)).join(' → ') });
+      };
+      const weiter = (kette) => {
+        bewerte(kette);
+        if (kette.length >= opts.maxTouren) return;
+        const last = kette[kette.length - 1];
+        list.forEach((c) => { if (!kette.includes(c) && wegZwischen(last.nach, c.von, opts.wege) != null) weiter(kette.concat([c])); });
+      };
+      list.forEach((c) => { if (num(c.anreise) <= opts.maxAnreise) weiter([c]); });
+      found.sort((a, b) => b.euroProStunde - a.euroProStunde || b.netto - a.netto);
+      if (found.length) out[date] = { beste: found[0], alternativen: found.slice(1, 4) };
+    });
+    return out;
+  }
+
+  const COLLS = ['days', 'orders', 'einnahmen', 'ausgaben', 'checkliste', 'geraete'];
   const SINGLES = ['settings', 'kvGezahlt'];
 
   // Stempelt Änderungen gegenüber dem zuletzt gespeicherten Stand (`prev`). Verändert `doc`.
@@ -279,6 +333,6 @@
     return JSON.stringify(sortKeys(d));
   }
 
-  const api = { canonical, stampChanges, mergeDocs, r2, num, parseTime, fmtTime, abzugQuote, provision, versicherung, netto, endortOk, planDay, quickCheck, auszahlung, abzuegeVon, monthList, monate, euer, KATEGORIEN, nextId, bucheAuftrag, mergeInbox };
+  const api = { canonical, stampChanges, mergeDocs, r2, num, parseTime, fmtTime, abzugQuote, provision, versicherung, netto, endortOk, planDay, quickCheck, auszahlung, abzuegeVon, monthList, monate, euer, KATEGORIEN, nextId, bucheAuftrag, mergeInbox, findChains };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Calc = api;
 })(typeof window !== 'undefined' ? window : globalThis);

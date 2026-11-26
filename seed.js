@@ -14,7 +14,7 @@
       vorfinQuote: 0.049, kvAb: '2026-12', monatVon: '2026-11', monatBis: '2027-08',
     },
     // Keine Buchungsdaten im öffentlichen Code: die kommen per Import oder Sync.
-    days: [], orders: [], einnahmen: [], ausgaben: [], kvGezahlt: {}, checkliste: [],
+    days: [], orders: [], einnahmen: [], ausgaben: [], kvGezahlt: {}, checkliste: [], geraete: [],
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = SEED; else root.SEED = SEED;
 })(typeof window !== 'undefined' ? window : globalThis);
