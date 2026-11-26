@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1f24">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Überführung">
+<title>Überführung – Touren &amp; Buchhaltung</title>
+<style>
+@font-face { font-family: "Archivo"; font-weight: 100 900; font-display: swap; src: url("fonts/archivo-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Archivo"; font-weight: 100 900; font-display: swap; src: url("fonts/archivo-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+20A0-20AB, U+20AD-20C4, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Archivo Narrow"; font-weight: 400 700; font-display: swap; src: url("fonts/archivo-narrow-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+:root {
+  --pylon: #1b1f24; --pylon-2: #262b33; --pylon-3: #333943; --pylon-ink: #eef0f2; --pylon-mute: #a3a9b2;
+  --led-amber: #ffb43a; --led-green: #4fe08f; --led-red: #ff6b5e;
+  --ground: #e2e4e6; --surface: #fbfbfc; --sunken: #f1f3f5; --line: #d6dade; --line-2: #bec4cb;
+  --ink: #1a1c1f; --ink-2: #4f555d; --ink-3: #5a5f67;
+  --amber: #9a5a00; --amber-tint: #fdf0d9; --green: #17703f; --green-tint: #e2f3e8; --red: #ad2a1f; --red-tint: #fbe4e1;
+  --radius: 10px; --radius-s: 7px;
+  --shadow: 0 1px 2px rgba(27,31,36,.06), 0 4px 14px rgba(27,31,36,.06);
+  --font: "Archivo", ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  --digits: "Archivo Narrow", "Archivo", ui-sans-serif, sans-serif;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: var(--font); font-size: 15px; line-height: 1.45; color: var(--ink); background: var(--ground); font-variant-numeric: tabular-nums; }
+::selection { background: var(--led-amber); color: var(--pylon); }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+* { scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+a { color: var(--amber); text-underline-offset: 3px; }
+h1, h2, h3 { margin: 0; line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+h1 { font-size: 1.6rem; font-weight: 700; }
+h2 { font-size: 1.15rem; font-weight: 650; }
+h3 { font-size: 0.98rem; font-weight: 650; }
+p { margin: 0; }
+.mute { color: var(--ink-2); }
+.small { font-size: 0.85rem; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.right { text-align: right; }
+svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ---------- Shell ---------- */
+.shell { display: grid; grid-template-columns: 236px 1fr; min-height: 100vh; }
+.rail { background: var(--pylon); color: var(--pylon-ink); padding: 22px 14px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 22px; }
+.brand { padding: 0 10px; }
+.brand b { display: block; font-size: 1.05rem; font-weight: 700; letter-spacing: 0.01em; }
+.brand span { font-size: 0.8rem; color: var(--pylon-mute); }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav button { all: unset; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-s); color: var(--pylon-mute); font-weight: 550; cursor: pointer; transition: background .18s var(--ease), color .18s var(--ease); }
+.nav button:hover { background: var(--pylon-2); color: var(--pylon-ink); }
+.nav button[aria-current="page"] { background: var(--pylon-3); color: var(--pylon-ink); }
+.nav button[aria-current="page"] svg { color: var(--led-amber); }
+.nav button:focus-visible { outline: 2px solid var(--led-amber); outline-offset: 0; }
+.main { padding: 28px clamp(16px, 3vw, 40px) 60px; max-width: 1240px; width: 100%; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.page-head p { margin-top: 4px; }
+.tabbar { display: none; }
+
+/* ---------- Preistafel (Signatur) ---------- */
+.tafel { background: var(--pylon); color: var(--pylon-ink); border-radius: var(--radius); padding: 6px 18px 10px; box-shadow: 0 2px 4px rgba(27,31,36,.18), 0 12px 28px rgba(27,31,36,.16); position: relative; }
+.tafel-head { display: flex; justify-content: space-between; align-items: center; gap: 4px 14px; flex-wrap: wrap; padding: 10px 0 8px; border-bottom: 1px solid var(--pylon-3); font-size: 0.8rem; color: var(--pylon-mute); font-weight: 550; letter-spacing: 0.02em; }
+.tafel-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--pylon-2); }
+.tafel-row:last-child { border-bottom: 0; }
+.tafel-row .lbl { font-size: 0.86rem; color: var(--pylon-ink); font-weight: 550; }
+.tafel-row .lbl small { display: block; color: var(--pylon-mute); font-weight: 400; font-size: 0.76rem; }
+.led { font-family: var(--digits); font-weight: 700; font-size: 2.1rem; line-height: 1; letter-spacing: -0.01em; color: var(--led-amber); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.led.s { font-size: 1.45rem; }
+.led.l { font-size: 3rem; }
+.led.xl { font-size: 3.6rem; }
+.tafel-lead { padding: 16px 0 14px; border-bottom: 1px solid var(--pylon-2); }
+.tafel-lead .bar { margin-top: 12px; }
+.lead-sub { display: block; margin-top: 6px; font-size: 0.8rem; color: var(--pylon-mute); }
+.led.good { color: var(--led-green); }
+.led.bad { color: var(--led-red); }
+.led.dim { color: var(--pylon-mute); }
+.led sup { font-size: 0.5em; vertical-align: 0.55em; margin-left: 1px; }
+.verdict { display: flex; align-items: center; gap: 10px; margin: 6px 0 4px; padding: 10px 12px; border-radius: var(--radius-s); font-weight: 650; }
+.verdict.good { background: rgba(79,224,143,.12); color: var(--led-green); }
+.verdict.bad { background: rgba(255,107,94,.12); color: var(--led-red); }
+
+/* ---------- Flächen ---------- */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+.panel + .panel { margin-top: 16px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.grid { display: grid; gap: 16px; }
+.g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g-side { grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-items: start; }
+.g-dash { grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+
+/* ---------- Controls ---------- */
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: var(--radius-s); border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background .16s var(--ease), border-color .16s var(--ease), transform .12s var(--ease); white-space: nowrap; }
+.btn:hover { background: var(--sunken); border-color: var(--ink-3); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--pylon); color: var(--pylon-ink); border-color: var(--pylon); }
+.btn.primary:hover { background: var(--pylon-3); }
+.btn.primary svg { color: var(--led-amber); }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--sunken); }
+.btn.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-tint); }
+.btn.icon { width: 34px; height: 34px; padding: 0; justify-content: center; }
+.btn.sm { height: 32px; padding: 0 10px; font-size: 0.84rem; }
+label.f { display: flex; flex-direction: column; gap: 5px; font-size: 0.82rem; font-weight: 600; color: var(--ink-2); min-width: 0; }
+label.f small { font-weight: 400; color: var(--ink-3); }
+input, select, textarea { font: inherit; font-size: 0.95rem; color: var(--ink); background: #fff; border: 1px solid var(--line-2); border-radius: var(--radius-s); height: 40px; padding: 0 11px; width: 100%; min-width: 0; transition: border-color .15s var(--ease), box-shadow .15s var(--ease); font-variant-numeric: tabular-nums; }
+textarea { height: auto; padding: 9px 11px; min-height: 64px; resize: vertical; }
+input:hover, select:hover { border-color: var(--ink-3); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 3px rgba(255,180,58,.28); }
+input::placeholder { color: #666b73; }
+input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--pylon); padding: 0; }
+input.cell { height: 32px; padding: 0 8px; font-size: 0.88rem; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 14px; }
+.form-grid .wide { grid-column: span 2; }
+.form-grid .full { grid-column: 1 / -1; }
+.check { flex-direction: row !important; align-items: center; gap: 9px !important; color: var(--ink) !important; font-size: 0.92rem !important; padding-top: 22px; }
+.formbox { background: var(--sunken); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; animation: drop .22s var(--ease); }
+@keyframes drop { from { opacity: 0; transform: translateY(-6px); } }
+.seg { display: inline-flex; background: var(--sunken); border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { all: unset; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 0.88rem; color: var(--ink-2); cursor: pointer; }
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(27,31,36,.12); }
+.seg button:focus-visible { outline: 2px solid var(--amber); }
+
+/* ---------- Status ---------- */
+.tag { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 0.78rem; font-weight: 650; background: var(--sunken); color: var(--ink-2); border: 1px solid var(--line); white-space: nowrap; }
+.tag.good { background: var(--green-tint); color: var(--green); border-color: #bfe3cb; }
+.tag.bad { background: var(--red-tint); color: var(--red); border-color: #f1c3bd; }
+.tag.warn { background: var(--amber-tint); color: var(--amber); border-color: #f1d6a6; }
+.tag.dark { background: var(--pylon); color: var(--pylon-ink); border-color: var(--pylon); }
+.tag svg.i { width: 14px; height: 14px; }
+.warns { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.warn-line { display: flex; gap: 8px; align-items: center; font-size: 0.88rem; font-weight: 550; color: var(--amber); }
+.warn-line.bad { color: var(--red); }
+.ok-line { display: flex; gap: 8px; align-items: center; font-size: 0.88rem; font-weight: 550; color: var(--green); margin-top: 12px; }
+
+/* ---------- Tabellen ---------- */
+.table-wrap { overflow-x: auto; margin: 0 -18px; padding: 0 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th { text-align: left; font-size: 0.76rem; font-weight: 650; color: var(--ink-2); padding: 8px 10px; border-bottom: 1px solid var(--line-2); white-space: nowrap; letter-spacing: 0.01em; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: var(--sunken); }
+td.right, th.right { text-align: right; }
+tfoot td { font-weight: 700; border-top: 1px solid var(--line-2); border-bottom: 0; }
+tr.current td { background: var(--amber-tint); }
+.trunc { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty { padding: 26px 18px; text-align: center; color: var(--ink-2); border: 1px dashed var(--line-2); border-radius: var(--radius); background: var(--sunken); }
+.empty b { display: block; color: var(--ink); margin-bottom: 4px; }
+
+/* ---------- Tourtage ---------- */
+.daylist { display: flex; flex-direction: column; gap: 6px; }
+.daybtn { all: unset; display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: var(--radius-s); border: 1px solid var(--line); background: var(--surface); cursor: pointer; transition: border-color .16s var(--ease), background .16s var(--ease); }
+.daybtn:hover { border-color: var(--ink-3); }
+.daybtn[aria-current="true"] { border-color: var(--pylon); background: #fff; box-shadow: inset 0 0 0 1px var(--pylon); }
+.daybtn:focus-visible { outline: 2px solid var(--amber); }
+.daybtn .d { text-align: center; line-height: 1.05; }
+.daybtn .d b { display: block; font-family: var(--digits); font-size: 1.45rem; }
+.daybtn .d span { font-size: 0.72rem; font-weight: 650; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.04em; }
+.daybtn .t { min-width: 0; }
+.daybtn .t b { display: block; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.daybtn .t span { font-size: 0.8rem; color: var(--ink-2); }
+.daybtn.past { opacity: .72; }
+
+/* Linie: Tourtag als Strecke mit Stationen */
+.linie { position: relative; margin: 6px 0 0; padding: 0; list-style: none; }
+.halt { position: relative; display: grid; grid-template-columns: 58px 26px 1fr; gap: 0 12px; min-height: 46px; }
+.halt .zeit { font-family: var(--digits); font-weight: 700; font-size: 1.05rem; text-align: right; padding-top: 1px; }
+.halt .zeit small { display: block; font-family: var(--font); font-weight: 500; font-size: 0.72rem; color: var(--ink-3); }
+.halt .spur { position: relative; display: flex; justify-content: center; }
+.halt .spur::before { content: ""; position: absolute; top: 0; bottom: 0; width: 4px; background: var(--pylon); border-radius: 2px; }
+.halt:first-child .spur::before { top: 10px; }
+.halt:last-child .spur::before { bottom: calc(100% - 12px); }
+.halt.zug .spur::before, .halt.next-zug .spur::before { background: none; width: 0; border-left: 2px dashed var(--ink-3); }
+.halt .punkt { position: relative; z-index: 1; width: 16px; height: 16px; margin-top: 3px; border-radius: 50%; background: var(--surface); border: 4px solid var(--pylon); }
+.halt.end .punkt { width: 20px; height: 20px; margin-top: 1px; background: var(--led-amber); border-color: var(--pylon); }
+.halt .info { padding-bottom: 14px; min-width: 0; }
+.halt .info b { font-size: 0.95rem; }
+.halt .info .mute { font-size: 0.84rem; }
+.fahrt { margin: 8px 0 4px; padding: 10px 12px; background: var(--sunken); border: 1px solid var(--line); border-radius: var(--radius-s); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 0.86rem; }
+.fahrt .preis { font-family: var(--digits); font-weight: 700; font-size: 1.1rem; }
+.order-tools { display: flex; gap: 4px; margin-left: auto; align-items: center; flex-wrap: wrap; }
+.order-tools select { height: 32px; width: auto; font-size: 0.84rem; padding: 0 8px; }
+
+/* Diagramm */
+.chart text { font-family: var(--font); font-size: 11px; fill: var(--ink-2); }
+.chart .ziel { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.8rem; color: var(--ink-2); margin-top: 8px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; font-size: 0.92rem; }
+.kv dt { color: var(--ink-2); }
+.kv dd { margin: 0; text-align: right; font-weight: 650; }
+.bar { height: 8px; background: var(--pylon-2); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+.bar > span { display: block; height: 100%; background: var(--led-amber); border-radius: 4px; transition: width .4s var(--ease); }
+.bar.light { background: var(--line); }
+.todo { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+.todo:last-child { border-bottom: 0; }
+.todo input { margin-top: 1px; flex: none; }
+.todo.done span { color: var(--ink-3); text-decoration: line-through; }
+.todo small { margin-left: auto; color: var(--ink-3); white-space: nowrap; padding-left: 10px; }
+
+#toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--pylon); color: var(--pylon-ink); padding: 12px 18px; border-radius: var(--radius); box-shadow: 0 10px 30px rgba(27,31,36,.3); font-weight: 550; opacity: 0; pointer-events: none; transition: opacity .2s var(--ease), transform .25s var(--ease); z-index: 50; max-width: calc(100vw - 32px); }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.hint { font-size: 0.84rem; color: var(--ink-2); background: var(--sunken); border: 1px solid var(--line); border-radius: var(--radius-s); padding: 10px 12px; }
+.hint b { color: var(--ink); }
+
+/* ---------- iPhone ---------- */
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: sticky; height: auto; flex-direction: row; align-items: center; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); z-index: 20; gap: 12px; }
+  .rail .nav { display: none; }
+  .main { padding: 18px 14px calc(96px + env(safe-area-inset-bottom)); }
+  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; background: var(--pylon); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); z-index: 30; }
+  .tabbar button { all: unset; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; font-size: 0.7rem; font-weight: 600; color: var(--pylon-mute); cursor: pointer; }
+  .tabbar button[aria-current="page"] { color: var(--pylon-ink); }
+  .tabbar button[aria-current="page"] svg { color: var(--led-amber); }
+  .tabbar svg.i { width: 22px; height: 22px; }
+  .g-2, .g-side, .g-dash { grid-template-columns: 1fr; }
+  h1 { font-size: 1.35rem; }
+  .led { font-size: 1.8rem; } .led.l { font-size: 2.4rem; } .led.xl { font-size: 3rem; }
+  .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-grid .wide { grid-column: 1 / -1; }
+  .halt { grid-template-columns: 48px 22px 1fr; gap: 0 8px; }
+  .check-grid > .tafel { order: -1; }
+  .touren-grid > .day-detail { order: -1; }
+  .panel { padding: 14px; }
+  .table-wrap { margin: 0 -14px; padding: 0 14px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media print { .rail, .tabbar, .btn, #toast { display: none !important; } .shell { display: block; } .panel { box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand"><b>Überführung</b><span id="syncline">Touren &amp; Buchhaltung</span></div>
+    <nav class="nav" id="nav" aria-label="Hauptnavigation"></nav>
+  </aside>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Hauptnavigation"></nav>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+<input type="file" id="inboxFile" accept="application/json,.json" hidden>
+
+<script src="calc.js"></script>
+<script src="seed.js"></script>
+<script src="config.js"></script>
+<script src="sync.js"></script>
+<script>
+'use strict';
+const C = window.Calc;
+const KEY = 'ueberfuehrung.v1';
+
+// ---------- Daten ----------
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+let uid = Date.now();
+const newKey = () => 'k' + (uid++).toString(36);
+function ensureKeys(d) {
+  ['days', 'orders', 'einnahmen', 'ausgaben', 'checkliste'].forEach((c) => (d[c] || (d[c] = [])).forEach((x) => { if (!x._k) x._k = newKey(); }));
+  d.settings = Object.assign(clone(SEED.settings), d.settings || {});
+  d.kvGezahlt = d.kvGezahlt || {};
+  d.meta = d.meta || {};
+  // Ketten-Reihenfolge als eigenes Feld, damit sie den Sync übersteht
+  const byDate = {};
+  d.orders.forEach((o) => { if (o.seq == null) o.seq = (byDate[o.date] = (byDate[o.date] ?? Math.max(-1, ...d.orders.filter((x) => x.date === o.date && x.seq != null).map((x) => x.seq))) + 1); });
+  return d;
+}
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) return ensureKeys(JSON.parse(raw)); } catch (e) { console.error(e); }
+  return ensureKeys(clone(SEED));
+}
+let D = load();
+let storageOk = true;
+C.stampChanges(D, clone(D), Date.now()); // nur fehlende Zeitstempel ergänzen
+let lastSaved = clone(D);
+function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(D)); storageOk = true; }
+  catch (e) { storageOk = false; toast('Speichern im Browser nicht möglich – bitte Sicherung exportieren.'); }
+  lastSaved = clone(D);
+}
+// Jede Änderung läuft hier durch: Zeitstempel setzen, lokal speichern, Sync anstoßen
+function save() { C.stampChanges(D, lastSaved, Date.now()); persist(); Sync.schedule(); }
+persist();
+let pendingRender = false;
+// Stand vom Server übernehmen, ohne ein offenes Formular oder ein Feld mit Fokus zu zerstören
+function applyRemote(doc, warnungen) {
+  const merged = C.mergeDocs(D, doc);
+  D = ensureKeys(merged.doc); persist();
+  if (C.canonical(D) !== C.canonical(doc)) Sync.schedule();
+  (warnungen || []).forEach((w) => toast('Sync: ' + w));
+  const busy = ui.form || (document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName));
+  if (busy) pendingRender = true; else render();
+}
+
+// ---------- Format ----------
+const eur = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+const dec = (n, d = 2) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0);
+const money = (n) => eur.format(n || 0);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const MON = ['Jan.', 'Feb.', 'März', 'Apr.', 'Mai', 'Juni', 'Juli', 'Aug.', 'Sep.', 'Okt.', 'Nov.', 'Dez.'];
+const MONL = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const dObj = (iso) => new Date(iso + 'T12:00:00');
+const fmtDate = (iso) => (iso ? dObj(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+const fmtDay = (iso) => WT[dObj(iso).getDay()] + ', ' + dObj(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
+const monName = (mk) => MONL[+mk.slice(5) - 1] + ' ' + mk.slice(0, 4);
+const todayISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const ort = (s) => { const m = String(s || '').match(/^\s*(\d{5})?\s*([^(,]+)/); return m ? m[2].trim() : String(s || ''); };
+const ledClass = (eh) => (eh >= D.settings.minEh ? 'good' : 'bad');
+const ledNum = (n, d = 2) => { const [a, b] = dec(n, d).split(','); return d ? esc(a) + '<sup>,' + esc(b) + '</sup>' : esc(a); };
+
+// ---------- Icons (eine Strichstärke) ----------
+const ICONS = {
+  dash: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+  route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+  fuel: '<line x1="3" x2="15" y1="22" y2="22"/><line x1="4" x2="14" y1="9" y2="9"/><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"/><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"/>',
+  book: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>',
+  set: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  edit: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  up: '<path d="m18 15-6-6-6 6"/>', down: '<path d="m6 9 6 6 6-6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>', x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  train: '<rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h.01"/><path d="M16 15h.01"/>',
+  home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  down2: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  up2: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+  book2: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+};
+const ic = (n) => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + ICONS[n] + '</svg>';
+
+// ---------- Zustand der Oberfläche ----------
+const VIEWS = [
+  { id: 'start', label: 'Übersicht', icon: 'dash' },
+  { id: 'touren', label: 'Tourtage', icon: 'route' },
+  { id: 'check', label: 'Auftrag prüfen', short: 'Prüfen', icon: 'fuel' },
+  { id: 'buch', label: 'Buchhaltung', short: 'Buchung', icon: 'book' },
+  { id: 'setup', label: 'Einstellungen', short: 'Mehr', icon: 'set' },
+];
+const ui = { view: 'start', day: null, buch: 'einnahmen', form: null, q: { preis: 100, km: 200, anreise: 60, heim: 60, weg: 0, nach: '' } };
+const fromHash = () => { const [h, d] = location.hash.slice(1).split('/'); if (VIEWS.some((v) => v.id === h)) ui.view = h; if (h === 'touren' && d) ui.day = d; };
+fromHash();
+
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 3200); }
+
+const sortedDays = () => D.days.slice().sort((a, b) => a.date.localeCompare(b.date));
+function defaultDay() {
+  const t = todayISO(), ds = sortedDays();
+  return (ds.find((d) => d.date >= t) || ds[ds.length - 1] || {}).date || null;
+}
+const planOf = (day) => C.planDay(day, D.orders, D.settings);
+const curMonth = () => { const m = todayISO().slice(0, 7), s = D.settings; return m < s.monatVon ? s.monatVon : m > s.monatBis ? s.monatBis : m; };
+
+// ---------- Render ----------
+function render() {
+  const navHTML = (short) => VIEWS.map((v) => '<button type="button" data-act="go" data-v="' + v.id + '"' + (ui.view === v.id ? ' aria-current="page"' : '') + '>' + ic(v.icon) + '<span>' + esc(short ? (v.short || v.label) : v.label) + '</span></button>').join('');
+  document.getElementById('nav').innerHTML = navHTML(false);
+  document.getElementById('tabbar').innerHTML = navHTML(true);
+  document.getElementById('main').innerHTML = ({ start: vStart, touren: vTouren, check: vCheck, buch: vBuch, setup: vSetup })[ui.view]();
+  document.title = VIEWS.find((v) => v.id === ui.view).label + ' · Überführung';
+}
+
+// ---------- Übersicht ----------
+function vStart() {
+  const s = D.settings, m = C.monate(D, s), mk = curMonth(), cur = m.find((x) => x.monat === mk) || m[0];
+  const nachKV = C.r2(cur.gewinn - cur.kv);
+  const quote = s.zielNachKV > 0 ? Math.max(0, Math.min(1, nachKV / s.zielNachKV)) : 0;
+  const ruecklage = C.r2(m.filter((x) => x.monat <= mk).reduce((a, x) => a + x.ruecklage, 0));
+  const offen = D.einnahmen.filter((e) => !e.erhaltenAm && e.brutto);
+  const nd = defaultDay(), day = D.days.find((d) => d.date === nd);
+  const todos = D.checkliste.filter((c) => !c.done).slice(0, 5);
+  let html = '<div class="page-head"><div><h1>' + esc(monName(mk)) + '</h1><p class="mute">Stand ' + esc(fmtDate(todayISO())) + ' · alle Werte rechnen sich aus Tourtagen und Buchungen.</p></div>'
+    + '<div class="row"><button class="btn" data-act="go" data-v="check">' + ic('fuel') + 'Auftrag prüfen</button><button class="btn primary" data-act="go" data-v="touren">' + ic('route') + 'Tourtage planen</button></div></div>';
+  html += '<div class="grid g-dash"><div class="stack">';
+  const kvAktiv = mk >= s.kvAb;
+  html += '<section class="tafel" aria-label="Monatswerte"><div class="tafel-head"><span>Gewinn nach KV</span><span>Ziel ' + money(s.zielNachKV) + '</span></div>'
+    + '<div class="tafel-lead"><span class="led xl ' + (cur.ziel ? 'good' : nachKV < 0 ? 'bad' : '') + '">' + ledNum(nachKV) + '</span><div class="bar"><span style="width:' + (quote * 100) + '%"></span></div><span class="lead-sub">' + Math.round(quote * 100) + ' % vom Monatsziel</span></div>'
+    + (kvAktiv ? '<div class="tafel-row"><span class="lbl">Gewinn<small>Einnahmen ' + money(cur.einnahmen) + ' − Ausgaben ' + money(cur.ausgaben) + '</small></span><span class="led s ' + (cur.gewinn < 0 ? 'bad' : '') + '">' + ledNum(cur.gewinn) + '</span></div>'
+      : '<div class="tafel-row"><span class="lbl">Einnahmen<small>Brutto nach Tourdatum</small></span><span class="led s">' + ledNum(cur.einnahmen) + '</span></div>'
+      + '<div class="tafel-row"><span class="lbl">Ausgaben<small>Belege + Vorfinanzierung</small></span><span class="led s dim">' + ledNum(cur.ausgaben) + '</span></div>')
+    + (kvAktiv ? '<div class="tafel-row"><span class="lbl">KV/PV geschätzt<small>' + dec(s.kvSatz * 100, 1) + ' % auf mind. ' + money(s.kvMin) + '</small></span><span class="led s">' + ledNum(cur.kv) + '</span></div>'
+      : '<div class="tafel-row"><span class="lbl">KV/PV ab ' + esc(MON[+s.kvAb.slice(5) - 1]) + '<small>vorher keine Beiträge</small></span><span class="led s dim">—</span></div>')
+    + '<div class="tafel-row"><span class="lbl">Touren<small>gebuchte Überführungen</small></span><span class="led s">' + cur.touren + '</span></div></section>';
+  html += '<section class="panel"><div class="panel-head"><h2>Geld &amp; Rücklage</h2></div><dl class="kv">'
+    + '<dt>Rücklage bis ' + esc(MON[+mk.slice(5) - 1]) + ' (KV-Nachzahlung + Steuer)</dt><dd class="num">' + money(ruecklage) + '</dd>'
+    + '<dt>Noch nicht eingegangen</dt><dd class="num">' + money(offen.reduce((a, e) => a + C.num(e.brutto), 0)) + '</dd>'
+    + '<dt>Gewinn ' + esc(mk.slice(0, 4)) + ' laut EÜR</dt><dd class="num">' + money(C.euer(D, mk.slice(0, 4)).gewinn) + '</dd></dl>'
+    + (offen.length ? '<p class="hint" style="margin-top:12px"><b>' + offen.length + ' Zahlung' + (offen.length > 1 ? 'en' : '') + ' ohne Eingangsdatum.</b> Erst mit „Geld erhalten am“ zählt die Einnahme in der EÜR. <a href="#buch" data-act="go" data-v="buch">Eintragen</a></p>' : '')
+    + '</section></div><div class="stack">';
+  // nächster Tourtag
+  html += '<section class="panel"><div class="panel-head"><h2>' + (day ? 'Nächster Tourtag · ' + esc(fmtDay(day.date)) : 'Nächster Tourtag') + '</h2>'
+    + (day ? '<button class="btn sm" data-act="open-day" data-date="' + esc(day.date) + '">Öffnen</button>' : '') + '</div>';
+  if (day) {
+    const p = planOf(day);
+    const wdN = dObj(day.date).getDay();
+    if (wdN === 1 || wdN === 5) html += '<p class="warn-line" style="margin:-6px 0 12px">' + ic('alert') + 'Montag/Freitag ist Minijob-Tag.</p>';
+    html += p.anzahl ? miniDay(p, day) : '<div class="empty"><b>Noch keine Aufträge an diesem Tag.</b>Suche in ONLOGIST ab ' + esc(day.start || 'deiner Startstadt') + ' im Umkreis 20–50 km.</div>';
+  } else html += '<div class="empty"><b>Kein Tourtag geplant.</b>Lege unter „Tourtage“ einen Tag an.</div>';
+  html += '</section>';
+  html += '<section class="panel"><div class="panel-head"><h2>Monatsverlauf</h2><span class="small mute">Gewinn nach KV, Linie = Ziel</span></div>' + chart(m, mk) + '</section>';
+  html += '<section class="panel"><div class="panel-head"><h2>Als Nächstes</h2><button class="btn sm ghost" data-act="go" data-v="setup">Alle Aufgaben</button></div>'
+    + (todos.length ? todos.map((c) => todoRow(c)).join('') : '<p class="mute">Alles erledigt.</p>') + '</section>';
+  html += '</div></div>';
+  return html;
+}
+function miniDay(p, day) {
+  return '<div class="row" style="gap:18px;margin-bottom:10px">'
+    + stat('Netto', money(p.netto)) + stat('€/Std.', dec(p.eh) + ' €', p.eh >= D.settings.minEh ? 'good' : 'bad') + stat('Los', C.fmtTime(p.los)) + stat('Zurück', C.fmtTime(p.zurueck)) + '</div>'
+    + '<ol class="linie" aria-label="Ablauf des Tages">' + halt(C.fmtTime(p.los), 'zu Hause', '<b>Los</b>', 'zug')
+    + p.rows.map((r) => halt(C.fmtTime(r.abfahrt), 'Abholung', '<b>' + esc(ort(r.order.von)) + '</b> ' + statusTag(r.order.status) + '<div class="mute">' + esc(r.order.km) + ' km · ' + money(r.netto) + ' netto</div>', '')
+      + halt(C.fmtTime(r.ankunft), 'Ankunft', '<b>' + esc(ort(r.order.nach)) + '</b>', r.last ? 'zug' : '')).join('')
+    + halt(C.fmtTime(p.zurueck), 'zu Hause', '<b>Zurück</b>', 'end') + '</ol>'
+    + warnList(p);
+}
+const stat = (l, v, cls) => '<div><div class="small mute">' + esc(l) + '</div><div class="num" style="font-weight:700;font-size:1.1rem;' + (cls === 'good' ? 'color:var(--green)' : cls === 'bad' ? 'color:var(--red)' : '') + '">' + esc(v) + '</div></div>';
+const STATUS = { idee: ['Idee', ''], angenommen: ['angenommen', 'warn'], erledigt: ['erledigt', 'good'], abgesagt: ['abgesagt', 'bad'] };
+const statusTag = (st) => '<span class="tag ' + (STATUS[st] || STATUS.idee)[1] + '">' + esc((STATUS[st] || STATUS.idee)[0]) + '</span>';
+function warnList(p) {
+  if (!p.anzahl) return '';
+  if (!p.warnungen.length) return '<div class="ok-line">' + ic('check') + 'Alles passt: pünktlich, Ende im Gebiet, über ' + D.settings.minEh + ' €/Std.</div>';
+  return '<div class="warns">' + p.warnungen.map((w) => '<div class="warn-line' + (/spät|Limit/.test(w) ? ' bad' : '') + '">' + ic('alert') + esc(w) + '</div>').join('') + '</div>';
+}
+function todoRow(c) {
+  return '<label class="todo' + (c.done ? ' done' : '') + '"><input type="checkbox" data-act="todo" data-k="' + c._k + '"' + (c.done ? ' checked' : '') + '><span>' + esc(c.text) + '</span><small>' + esc(c.bis) + '</small></label>';
+}
+function chart(m, mk) {
+  const s = D.settings, narrow = window.innerWidth < 860, W = narrow ? 340 : 640, H = narrow ? 190 : 210, pl = narrow ? 36 : 44, pb = 26, pt = 10;
+  const vals = m.map((x) => x.gewinn - x.kv);
+  const max = Math.max(s.zielNachKV * 1.15, ...vals), min = Math.min(0, ...vals);
+  const y = (v) => pt + (max - v) / (max - min) * (H - pt - pb);
+  const bw = (W - pl) / m.length;
+  let g = '';
+  [min, 0, s.zielNachKV / 2, s.zielNachKV].filter((v, i, a) => a.indexOf(v) === i).forEach((v) => { g += '<text x="' + (pl - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + esc(new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(v)) + '</text><line x1="' + pl + '" x2="' + W + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 0 ? '#8d929a' : '#dde1e5') + '"/>'; });
+  m.forEach((x, i) => {
+    const v = vals[i], x0 = pl + i * bw + bw * 0.18, w = bw * 0.64, y0 = y(Math.max(v, 0)), h = Math.abs(y(v) - y(0));
+    const col = x.monat > mk ? '#c3c8ce' : v < 0 ? '#e88b82' : x.ziel ? '#2f9e5f' : '#1b1f24';
+    g += '<rect x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + Math.max(h, 1) + '" rx="3" fill="' + col + '"' + (x.monat === mk ? ' stroke="#ffb43a" stroke-width="2.5"' : '') + '><title>' + esc(monName(x.monat)) + ': ' + esc(money(v)) + '</title></rect>';
+    g += '<text x="' + (x0 + w / 2) + '" y="' + (H - 8) + '" text-anchor="middle"' + (x.monat === mk ? ' style="font-weight:700;fill:#1a1c1f"' : '') + '>' + esc(narrow ? MON[+x.monat.slice(5) - 1].slice(0, 1) : MON[+x.monat.slice(5) - 1].replace('.', '')) + '</text>';
+  });
+  g += '<line class="ziel" x1="' + pl + '" x2="' + W + '" y1="' + y(s.zielNachKV) + '" y2="' + y(s.zielNachKV) + '"/>';
+  return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Gewinn nach KV je Monat">' + g + '</svg>'
+    + '<div class="legend"><span><i style="background:#1b1f24"></i>unter Ziel</span><span><i style="background:#2f9e5f"></i>Ziel erreicht</span><span><i style="background:#e88b82"></i>Verlust</span><span><i style="background:#c3c8ce"></i>Prognose (nur KV)</span></div>';
+}
+
+// ---------- Tourtage ----------
+function vTouren() {
+  if (!ui.day || !D.days.some((d) => d.date === ui.day)) ui.day = defaultDay();
+  const t = todayISO();
+  let html = '<div class="page-head"><div><h1>Tourtage</h1><p class="mute">Aufträge eines Tages in Fahr-Reihenfolge: die App rechnet Zeiten, Kette, Netto und prüft alles.</p></div>'
+    + '<div class="row"><button class="btn" data-act="inbox">' + ic('up2') + 'Aufträge aus Datei laden</button><button class="btn primary" data-act="form" data-kind="day">' + ic('plus') + 'Tourtag anlegen</button></div></div>';
+  if (ui.form && ui.form.kind === 'day') html += formBox();
+  html += '<div class="grid g-side touren-grid"><div class="daylist" role="list">';
+  if (!D.days.length) html += '<div class="empty"><b>Noch keine Tourtage.</b>Lege oben deinen ersten Tag an.</div>';
+  sortedDays().forEach((d) => {
+    const p = planOf(d), wd = dObj(d.date).getDay();
+    const st = !p.anzahl ? '<span class="tag">leer</span>' : p.warnungen.length ? '<span class="tag warn">' + ic('alert') + p.warnungen.length + '</span>' : '<span class="tag good">' + ic('check') + 'ok</span>';
+    html += '<button class="daybtn' + (d.date < t ? ' past' : '') + '" role="listitem" data-act="open-day" data-date="' + esc(d.date) + '"' + (ui.day === d.date ? ' aria-current="true"' : '') + '>'
+      + '<span class="d"><b>' + dObj(d.date).getDate() + '</b><span>' + WT[wd] + ' ' + esc(MON[dObj(d.date).getMonth()]) + '</span></span>'
+      + '<span class="t"><b>' + esc(d.start || '—') + '</b><span>' + (p.anzahl ? p.anzahl + ' Auftr. · ' + money(p.netto) + ' · ' + dec(p.eh, 0) + ' €/h' : 'noch keine Aufträge') + '</span></span>' + st + '</button>';
+  });
+  html += '</div><div class="day-detail">' + (ui.day ? dayDetail(D.days.find((d) => d.date === ui.day)) : '') + '</div></div>';
+  return html;
+}
+function dayDetail(day) {
+  const s = D.settings, p = planOf(day), wd = dObj(day.date).getDay();
+  const all = D.orders.filter((o) => o.date === day.date);
+  let html = '<section class="panel"><div class="panel-head"><div><h2>' + esc(fmtDay(day.date)) + ' ' + dObj(day.date).getFullYear() + '</h2>'
+    + (wd === 1 || wd === 5 ? '<p class="small" style="color:var(--amber);margin-top:4px;font-weight:600">Montag/Freitag ist Minijob-Tag.</p>' : '') + '</div>'
+    + '<div class="row"><button class="btn sm danger" data-act="del-day" data-k="' + day._k + '">' + ic('trash') + 'Tag löschen</button></div></div>'
+    + '<div class="form-grid" style="margin-bottom:16px"><label class="f">Startstadt<input data-day="start" data-k="' + day._k + '" value="' + esc(day.start) + '" placeholder="z. B. Freising"></label>'
+    + '<label class="f">Zug kommt an<input type="time" data-day="zug" data-k="' + day._k + '" value="' + esc(day.zug) + '"></label></div>';
+  if (p.anzahl) {
+    html += '<div class="tafel" style="margin-bottom:18px"><div class="tafel-head"><span>Tagesbilanz · ' + p.anzahl + ' Auftr. · ' + dec(p.km, 0) + ' km</span><span>Tagesziel ' + money(s.tagesziel) + '</span></div>'
+      + '<div class="grid g-2" style="gap:0 24px"><div class="tafel-row"><span class="lbl">Netto<small>nach Provision + Versicherung</small></span><span class="led ' + (p.netto >= s.tagesziel ? 'good' : '') + '">' + ledNum(p.netto) + '</span></div>'
+      + '<div class="tafel-row"><span class="lbl">€ / Std.<small>Haustür bis Haustür, ' + dec(p.std, 1) + ' h</small></span><span class="led ' + ledClass(p.eh) + '">' + ledNum(p.eh) + '</span></div>'
+      + '<div class="tafel-row"><span class="lbl">Los ab zu Hause</span><span class="led s">' + esc(C.fmtTime(p.los)) + '</span></div>'
+      + '<div class="tafel-row"><span class="lbl">Zurück zu Hause</span><span class="led s">' + esc(C.fmtTime(p.zurueck)) + '</span></div></div>'
+      + '<div class="bar" style="margin:4px 0 8px"><span style="width:' + Math.min(100, p.zielQuote * 100) + '%"></span></div></div>';
+    html += linie(p, day);
+    html += warnList(p);
+  } else {
+    html += '<div class="empty"><b>Noch keine Aufträge.</b>ONLOGIST › Aufträge finden: Startort = ' + esc(day.start || 'Startstadt') + ', Umkreis 20–50 km. Danach Zielort des letzten Auftrags als neuen Startort suchen.</div>';
+  }
+  const abg = all.filter((o) => o.status === 'abgesagt');
+  if (abg.length) html += '<p class="small mute" style="margin-top:14px">Abgesagt, zählt nicht: ' + abg.map((o) => esc(o.auftragsId || ort(o.von)) + ' <button class="btn sm ghost" data-act="form" data-kind="order" data-k="' + o._k + '">' + ic('edit') + 'öffnen</button>').join(', ') + '</p>';
+  html += '<div class="row" style="margin-top:16px"><button class="btn primary" data-act="form" data-kind="order">' + ic('plus') + 'Auftrag hinzufügen</button><span class="small mute">Gleiches Datum = Kette. Reihenfolge mit den Pfeilen.</span></div>';
+  if (ui.form && ui.form.kind === 'order') html += '<div style="margin-top:14px">' + formBox() + '</div>';
+  html += '</section>';
+  return html;
+}
+function linie(p, day) {
+  const s = D.settings;
+  let h = '<ol class="linie" aria-label="Ablauf des Tages">';
+  h += halt(C.fmtTime(p.los), 'zu Hause', '<b>Los ab zu Hause</b><div class="mute">' + ic('train') + ' ' + esc(p.rows[0].order.anreise || 0) + ' Min. Anreise mit dem Zug</div>', 'zug');
+  h += halt(day.zug || '07:30', 'Zug an', '<b>' + esc(day.start || 'Startstadt') + '</b>', 'next-zug');
+  p.rows.forEach((r, i) => {
+    const o = r.order;
+    const conn = { start: '', nichtStart: '<span class="tag warn">' + ic('alert') + 'nicht in Startstadt</span>', passt: '<span class="tag good">Anschluss passt</span>', weg: '<span class="tag">' + esc(o.weg) + ' Min. vom letzten Ziel</span>', luecke: '<span class="tag warn">' + ic('alert') + 'Weg vom letzten Ziel fehlt</span>' }[r.anschluss];
+    const idx = D.orders.indexOf(o);
+    h += halt(C.fmtTime(r.abfahrt), 'Abholung', '<b>' + esc(o.von) + '</b><div class="row" style="gap:6px;margin-top:4px">' + statusTag(o.status) + (o.quelle === 'auto-check' && o.status === 'idee' ? '<span class="tag warn">Auto-Check</span>' : '') + (o.auftragsId ? '<span class="tag dark">#' + esc(o.auftragsId) + '</span>' : '') + conn + (r.warten > 0.01 ? '<span class="tag">' + Math.round(r.warten * 60) + ' Min. warten</span>' : '') + '</div>'
+      + '<div class="fahrt"><span class="preis">' + money(r.netto) + '</span><span class="mute">netto von ' + money(o.preis) + '</span><span>' + esc(o.km) + ' km · ' + dec(C.num(o.preis) / Math.max(C.num(o.km), 1)) + ' €/km</span><span class="tag ' + (r.ehOk ? 'good' : 'bad') + '">' + dec(r.eh, 0) + ' €/Std.</span>'
+      + '<div class="order-tools"><select data-status="' + o._k + '" aria-label="Status">' + Object.keys(STATUS).map((k) => '<option value="' + k + '"' + (o.status === k ? ' selected' : '') + '>' + STATUS[k][0] + '</option>').join('') + '</select>'
+      + '<button class="btn icon sm" data-act="move" data-k="' + o._k + '" data-dir="-1" aria-label="Nach oben"' + (i === 0 ? ' disabled' : '') + '>' + ic('up') + '</button>'
+      + '<button class="btn icon sm" data-act="move" data-k="' + o._k + '" data-dir="1" aria-label="Nach unten"' + (i === p.rows.length - 1 ? ' disabled' : '') + '>' + ic('down') + '</button>'
+      + '<button class="btn icon sm" data-act="form" data-kind="order" data-k="' + o._k + '" aria-label="Bearbeiten">' + ic('edit') + '</button>'
+      + '<button class="btn icon sm danger" data-act="del-order" data-k="' + o._k + '" aria-label="Löschen">' + ic('trash') + '</button></div></div>'
+      + (o.status === 'erledigt' && !o.gebucht ? '<button class="btn sm primary" style="margin-top:6px" data-act="book" data-k="' + o._k + '">' + ic('book') + 'In Buchhaltung übernehmen</button>' : o.gebucht ? '<p class="small" style="color:var(--green);font-weight:600;margin-top:4px">In der Buchhaltung gebucht.</p>' : '')
+      + (o.notiz ? '<p class="small mute" style="margin-top:6px">' + esc(o.notiz) + '</p>' : ''), '');
+    const end = r.last;
+    h += halt(C.fmtTime(r.ankunft), o.bis ? 'bis ' + o.bis : 'Ankunft', '<b>' + esc(o.nach) + '</b><div class="row" style="gap:6px;margin-top:4px">' + (r.puenktlich ? (o.bis ? '<span class="tag good">pünktlich</span>' : '') : '<span class="tag bad">' + ic('alert') + 'zu spät</span>') + (end ? (p.endeOk ? '<span class="tag good">Endort im Gebiet</span>' : '<span class="tag bad">außerhalb deiner Endorte</span>') : '') + '</div>', end ? 'zug' : '');
+  });
+  const last = p.rows[p.rows.length - 1].order;
+  h += halt(C.fmtTime(p.zurueck), 'zu Hause', '<b>Zurück zu Hause</b><div class="mute">' + ic('train') + ' ' + esc(last.heim || 0) + ' Min. Heimreise</div>', 'end');
+  return h + '</ol>';
+}
+const halt = (zeit, sub, body, cls) => '<li class="halt ' + cls + '"><div class="zeit">' + esc(zeit) + '<small>' + esc(sub) + '</small></div><div class="spur"><span class="punkt"></span></div><div class="info">' + body + '</div></li>';
+
+// ---------- Auftrag prüfen ----------
+function vCheck() {
+  const s = D.settings, q = ui.q, r = C.quickCheck(q, s);
+  const mindest = minPrice(q);
+  let html = '<div class="page-head"><div><h1>Auftrag prüfen</h1><p class="mute">Vor dem Annehmen: Preis, km und Reisezeiten eintippen. Gerechnet wird mit Provision ' + dec(C.abzugQuote(s) * 100) + ' % und Versicherung.</p></div></div>';
+  html += '<div class="grid g-2 check-grid"><section class="panel"><div class="form-grid" id="qform">'
+    + qField('preis', 'Listenpreis', '€', 'decimal') + qField('km', 'Strecke', 'km', 'decimal')
+    + qField('anreise', 'Anreise ab Haustür', 'Min.', 'numeric') + qField('heim', 'Heimreise bis Haustür', 'Min.', 'numeric')
+    + qField('weg', 'Weg Bahnhof → Abholort', 'Min.', 'numeric') + '<label class="f">Zielort<input data-q="nach" value="' + esc(q.nach) + '" placeholder="z. B. 93059 Regensburg"></label></div>'
+    + '<p class="hint" style="margin-top:16px">Als Anschlussauftrag in einer Kette? Anreise/Heimreise auf 0 setzen und nur den Weg vom letzten Ziel eintragen. Ganze Ketten planst du unter <a href="#touren" data-act="go" data-v="touren">Tourtage</a>.</p></section>';
+  html += '<section class="tafel" aria-live="polite"><div class="tafel-head"><span>Preistafel</span><span>Mindestens ' + money(s.minEh) + '/Std.</span></div>'
+    + '<div class="tafel-row"><span class="lbl">€ / Std.<small>' + dec(r.std, 1) + ' h inkl. Übergabe + Reise</small></span><span class="led l ' + ledClass(r.eh) + '">' + ledNum(r.eh) + '</span></div>'
+    + '<div class="tafel-row"><span class="lbl">Netto für dich<small>− Provision ' + money(r.provision) + ' − Versicherung ' + money(r.versicherung) + '</small></span><span class="led">' + ledNum(r.netto) + '</span></div>'
+    + '<div class="tafel-row"><span class="lbl">€ / km<small>Listenpreis je km</small></span><span class="led s">' + ledNum(r.proKm) + '</span></div>'
+    + '<div class="tafel-row"><span class="lbl">Mindestpreis<small>für ' + money(s.minEh) + '/Std.</small></span><span class="led s">' + ledNum(mindest) + '</span></div>'
+    + '<div class="verdict ' + (r.ok ? 'good' : 'bad') + '">' + ic(r.ok ? 'check' : 'x') + (r.ok ? 'Annehmen – lohnt sich.' : 'Ablehnen oder auf ' + money(Math.ceil(mindest)) + ' nachverhandeln.') + '</div>'
+    + (q.nach ? '<div class="verdict ' + (r.endeOk ? 'good' : 'bad') + '" style="font-weight:550">' + ic(r.endeOk ? 'check' : 'alert') + (r.endeOk ? 'Ziel liegt in deinem Gebiet.' : 'Ziel liegt außerhalb deiner Endorte – Rückweg einplanen.') + '</div>' : '')
+    + '</section></div>';
+  return html;
+}
+const qField = (k, l, unit, mode) => '<label class="f">' + esc(l) + ' <small>(' + unit + ')</small><input type="number" step="any" min="0" inputmode="' + mode + '" data-q="' + k + '" value="' + esc(ui.q[k]) + '"></label>';
+function minPrice(q) {
+  const s = D.settings, r = C.quickCheck(q, s);
+  const need = s.minEh * r.std + r.versicherung + C.num(q.extra);
+  return need / (1 - C.abzugQuote(s));
+}
+
+// ---------- Buchhaltung ----------
+function vBuch() {
+  const tabs = [['einnahmen', 'Einnahmen'], ['ausgaben', 'Ausgaben'], ['monate', 'Monate'], ['euer', 'EÜR']];
+  let html = '<div class="page-head"><div><h1>Buchhaltung</h1><p class="mute">Kleinunternehmer § 19 UStG · Einnahmen zählen in der EÜR erst mit „Geld erhalten am“.</p></div>'
+    + '<div class="seg" role="group" aria-label="Bereich">' + tabs.map(([k, l]) => '<button type="button" data-act="buch" data-t="' + k + '" aria-pressed="' + (ui.buch === k) + '">' + l + '</button>').join('') + '</div></div>';
+  return html + ({ einnahmen: bEinnahmen, ausgaben: bAusgaben, monate: bMonate, euer: bEuer })[ui.buch]();
+}
+function bEinnahmen() {
+  const s = D.settings, list = D.einnahmen.slice().sort((a, b) => String(b.datum).localeCompare(String(a.datum)));
+  let html = '<section class="panel"><div class="panel-head"><h2>Einnahmen</h2><div class="row"><button class="btn sm" data-act="csv" data-c="einnahmen">' + ic('down2') + 'CSV</button><button class="btn sm primary" data-act="form" data-kind="einnahme">' + ic('plus') + 'Einnahme</button></div></div>';
+  if (ui.form && ui.form.kind === 'einnahme') html += formBox();
+  if (!list.length) return html + '<div class="empty"><b>Noch keine Einnahmen.</b>Erledigte Aufträge übernimmst du unter „Tourtage“ mit einem Klick.</div></section>';
+  html += '<div class="table-wrap"><table><thead><tr><th>Nr.</th><th>Datum</th><th>Strecke / Auftraggeber</th><th class="right">km</th><th class="right">Brutto</th><th class="right">Auszahlung</th><th class="right">€/Std.</th><th>Rechnung</th><th>Geld erhalten am</th><th></th></tr></thead><tbody>';
+  list.forEach((e) => {
+    const az = C.auszahlung(e, D.ausgaben), eh = C.num(e.stunden) > 0 && az != null ? az / C.num(e.stunden) : null;
+    html += '<tr><td class="num"><b>' + esc(e.id) + '</b></td><td class="num">' + esc(fmtDate(e.datum)) + '</td>'
+      + '<td><div class="trunc" title="' + esc(e.von + ' → ' + e.nach) + '"><b>' + esc(e.taetigkeit === 'Shapeit' ? 'ShapeIt' : ort(e.von) + ' → ' + ort(e.nach)) + '</b></div><div class="small mute trunc">' + esc(e.auftraggeber) + (e.vorfin ? ' · Vorfinanzierung ' + money(e.vorfinGebuehr) : '') + '</div></td>'
+      + '<td class="right num">' + esc(e.km || '') + '</td><td class="right num">' + money(e.brutto) + '</td><td class="right num"><b>' + (az == null ? '' : money(az)) + '</b></td>'
+      + '<td class="right">' + (eh == null ? '' : '<span class="tag ' + (eh >= s.minEh ? 'good' : 'bad') + '">' + dec(eh, 0) + ' €</span>') + '</td>'
+      + '<td class="num small">' + esc(e.rechnungsNr) + '</td>'
+      + '<td><input class="cell" type="date" data-ein="erhaltenAm" data-k="' + e._k + '" value="' + esc(e.erhaltenAm) + '" aria-label="Geld erhalten am ' + esc(e.id) + '" style="width:150px' + (e.erhaltenAm ? '' : ';border-color:var(--amber)') + '"></td>'
+      + '<td><div class="row" style="gap:2px;flex-wrap:nowrap"><button class="btn icon sm ghost" data-act="form" data-kind="einnahme" data-k="' + e._k + '" aria-label="Bearbeiten">' + ic('edit') + '</button><button class="btn icon sm ghost danger" data-act="del" data-c="einnahmen" data-k="' + e._k + '" aria-label="Löschen">' + ic('trash') + '</button></div></td></tr>';
+  });
+  const sum = (f) => list.reduce((a, e) => a + (f(e) || 0), 0);
+  html += '</tbody><tfoot><tr><td colspan="4">Summe</td><td class="right num">' + money(sum((e) => C.num(e.brutto))) + '</td><td class="right num">' + money(sum((e) => C.auszahlung(e, D.ausgaben))) + '</td><td colspan="4"></td></tr></tfoot></table></div>';
+  html += '<p class="small mute" style="margin-top:12px">Auszahlung = Brutto − Belege mit gleicher Rechnungs-Nr. (Provision, Versicherung) − Vorfinanzierung. €/Std. aus der Auszahlung.</p></section>';
+  return html;
+}
+function bAusgaben() {
+  const list = D.ausgaben.slice().sort((a, b) => String(b.datum).localeCompare(String(a.datum)) || String(b.id).localeCompare(String(a.id)));
+  let html = '<section class="panel"><div class="panel-head"><h2>Ausgaben</h2><div class="row"><button class="btn sm" data-act="csv" data-c="ausgaben">' + ic('down2') + 'CSV</button><button class="btn sm primary" data-act="form" data-kind="ausgabe">' + ic('plus') + 'Ausgabe</button></div></div>';
+  if (ui.form && ui.form.kind === 'ausgabe') html += formBox();
+  if (!list.length) return html + '<div class="empty"><b>Noch keine Ausgaben.</b>Pro Beleg eine Zeile. Beleg-Nr. = Dateiname im Ordner „Belege 2026-27“.</div></section>';
+  html += '<div class="table-wrap"><table><thead><tr><th>Beleg</th><th>Datum</th><th>Kategorie</th><th>Beschreibung</th><th>Tätigkeit</th><th class="right">Betrag</th><th></th></tr></thead><tbody>';
+  list.forEach((a) => {
+    html += '<tr><td class="num"><b>' + esc(a.id) + '</b></td><td class="num">' + esc(fmtDate(a.datum)) + '</td><td class="small">' + esc(a.kategorie) + '</td><td><div class="trunc" title="' + esc(a.beschreibung) + '">' + esc(a.beschreibung) + '</div>' + (a.ref ? '<div class="small mute">zu ' + esc(a.ref) + '</div>' : '') + '</td><td class="small">' + esc(a.taetigkeit === 'Shapeit' ? 'ShapeIt' : a.taetigkeit) + '</td><td class="right num"><b>' + money(a.betrag) + '</b></td>'
+      + '<td><div class="row" style="gap:2px;flex-wrap:nowrap"><button class="btn icon sm ghost" data-act="form" data-kind="ausgabe" data-k="' + a._k + '" aria-label="Bearbeiten">' + ic('edit') + '</button><button class="btn icon sm ghost danger" data-act="del" data-c="ausgaben" data-k="' + a._k + '" aria-label="Löschen">' + ic('trash') + '</button></div></td></tr>';
+  });
+  html += '</tbody><tfoot><tr><td colspan="5">Summe</td><td class="right num">' + money(list.reduce((x, a) => x + C.num(a.betrag), 0)) + '</td><td></td></tr></tfoot></table></div></section>';
+  return html;
+}
+function bMonate() {
+  const s = D.settings, m = C.monate(D, s), mk = curMonth();
+  let html = '<section class="panel"><div class="panel-head"><h2>Monate</h2><span class="small mute">KV ab ' + esc(monName(s.kvAb)) + ' · Steuer-Rücklage ' + dec(s.steuerQuote * 100, 0) + ' % vom Gewinn</span></div>'
+    + '<div class="table-wrap"><table><thead><tr><th>Monat</th><th class="right">Einnahmen</th><th class="right">Ausgaben</th><th class="right">Gewinn</th><th class="right">Touren</th><th class="right">KV/PV geschätzt</th><th class="right">KV gezahlt</th><th class="right">Steuer</th><th class="right">Nach KV &amp; Steuer</th><th>Ziel</th><th class="right">Rücklage</th></tr></thead><tbody>';
+  m.forEach((x) => {
+    html += '<tr' + (x.monat === mk ? ' class="current"' : '') + '><td><b>' + esc(monName(x.monat)) + '</b></td><td class="right num">' + money(x.einnahmen) + '</td><td class="right num">' + money(x.ausgaben) + '</td><td class="right num" style="' + (x.gewinn < 0 ? 'color:var(--red)' : '') + '"><b>' + money(x.gewinn) + '</b></td><td class="right num">' + x.touren + '</td><td class="right num">' + money(x.kv) + '</td>'
+      + '<td class="right"><input class="cell right" type="number" step="any" min="0" inputmode="decimal" data-kvg="' + x.monat + '" value="' + esc(D.kvGezahlt[x.monat] ?? '') + '" placeholder="0,00" style="width:96px" aria-label="KV gezahlt ' + esc(monName(x.monat)) + '"></td>'
+      + '<td class="right num">' + money(x.steuer) + '</td><td class="right num" style="' + (x.nachKvSteuer < 0 ? 'color:var(--red)' : '') + '">' + money(x.nachKvSteuer) + '</td><td>' + (x.ziel ? '<span class="tag good">' + ic('check') + 'ja</span>' : '<span class="small mute">—</span>') + '</td><td class="right num">' + money(x.ruecklage) + '</td></tr>';
+  });
+  const sum = (k) => money(m.reduce((a, x) => a + x[k], 0));
+  html += '</tbody><tfoot><tr><td>Summe</td><td class="right num">' + sum('einnahmen') + '</td><td class="right num">' + sum('ausgaben') + '</td><td class="right num">' + sum('gewinn') + '</td><td class="right num">' + m.reduce((a, x) => a + x.touren, 0) + '</td><td class="right num">' + sum('kv') + '</td><td class="right num">' + sum('kvGezahlt') + '</td><td class="right num">' + sum('steuer') + '</td><td class="right num">' + sum('nachKvSteuer') + '</td><td></td><td class="right num">' + sum('ruecklage') + '</td></tr></tfoot></table></div>'
+    + '<p class="hint" style="margin-top:14px"><b>Rücklage</b> = geschätzte KV minus tatsächlich gezahlte KV plus Steuer. Die Krankenkasse rechnet nach dem Steuerbescheid nach, deshalb den N26-Kontostand nie unter die Summe fallen lassen. Annahme: Der Minijob zählt zur Beitragsbasis – bei der Krankenkasse bestätigen lassen.</p></section>';
+  return html;
+}
+function bEuer() {
+  const years = [...new Set([D.settings.monatVon.slice(0, 4), D.settings.monatBis.slice(0, 4)])];
+  const E = years.map((y) => C.euer(D, y));
+  const row = (l, f, bold) => '<tr><td' + (bold ? '' : ' style="padding-left:22px"') + '>' + (bold ? '<b>' + l + '</b>' : esc(l)) + '</td>' + E.map((e) => '<td class="right num">' + (bold ? '<b>' + money(f(e)) + '</b>' : money(f(e))) + '</td>').join('') + '</tr>';
+  let html = '<section class="panel"><div class="panel-head"><h2>Einnahmen-Überschuss-Rechnung</h2><button class="btn sm" data-act="csv" data-c="euer">' + ic('down2') + 'CSV</button></div><div class="table-wrap"><table><thead><tr><th></th>' + E.map((e) => '<th class="right">' + e.jahr + '</th>').join('') + '</tr></thead><tbody>';
+  html += '<tr><td colspan="' + (E.length + 1) + '"><b>Betriebseinnahmen</b></td></tr>' + row('Einnahmen Überführung', (e) => e.einnahmen['Überführung']) + row('Einnahmen ShapeIt', (e) => e.einnahmen['Shapeit']) + row('Summe Einnahmen', (e) => e.summeEinnahmen, true);
+  html += '<tr><td colspan="' + (E.length + 1) + '"><b>Betriebsausgaben</b></td></tr>' + C.KATEGORIEN.map((k) => row(k === 'Gebühren/Plattform' ? 'Gebühren/Plattform (inkl. Vorfinanzierung)' : k, (e) => e.ausgaben[k])).join('') + row('Summe Ausgaben', (e) => e.summeAusgaben, true);
+  html += '</tbody><tfoot><tr><td>Gewinn (→ Anlage EÜR)</td>' + E.map((e) => '<td class="right num" style="' + (e.gewinn < 0 ? 'color:var(--red)' : '') + '">' + money(e.gewinn) + '</td>').join('') + '</tr></tfoot></table></div>';
+  const offen = E.filter((e) => e.offen > 0);
+  html += (offen.length ? '<p class="hint" style="margin-top:14px"><b>' + offen.map((e) => money(e.offen) + ' aus ' + e.jahr).join(', ') + ' ohne Eingangsdatum</b> – zählen erst, wenn du „Geld erhalten am“ einträgst.</p>' : '')
+    + '<p class="small mute" style="margin-top:12px">Keine Umsatzsteuer ausweisen, Rechnungshinweis: „Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.“ KV/PV-Beiträge sind keine Betriebsausgaben, sie gehören als Sonderausgaben in die Steuererklärung.</p></section>';
+  return html;
+}
+
+// ---------- Einstellungen ----------
+const SETTINGS = [
+  ['Tourplanung', [['tagesziel', 'Tagesziel netto', '€'], ['minEh', 'Mindest-€/Std.', '€'], ['limit', 'Neuling-Limit (Aufträge/Tag)', 'Stück'], ['tempo', 'Ø Tempo', 'km/h'], ['uebergabeH', 'Übernahme + Übergabe je Auftrag', 'Std.'], ['pufferH', 'Puffer zwischen zwei Aufträgen', 'Std.']]],
+  ['ONLOGIST-Abzüge', [['provision', 'Provision', 'Anteil, 0,15 = 15 %'], ['mwst', 'MwSt auf Provision + Versicherung', 'Anteil'], ['versGrund', 'Versicherung Grundbeitrag', '€/Auftrag'], ['versKm', 'Versicherung je km', '€'], ['versMax', 'Versicherung max. (vor MwSt)', '€'], ['vorfinQuote', 'Vorfinanzierung', 'Anteil, 0,049 = 4,9 %']]],
+  ['Krankenversicherung & Steuer', [['kvSatz', 'KV+PV-Satz', 'Anteil, 0,205 = 20,5 %'], ['kvMin', 'Mindestbemessung KV', '€/Monat'], ['minijob', 'Minijob-Lohn', '€/Monat'], ['steuerQuote', 'Steuer-Rücklage', 'Anteil vom Gewinn'], ['zielNachKV', 'Ziel: Gewinn nach KV', '€/Monat']]],
+];
+function vSetup() {
+  const s = D.settings;
+  let html = '<div class="page-head"><div><h1>Einstellungen</h1><p class="mute">Alle Werte wirken sofort auf Tourtage, Prüfung und Buchhaltung.</p></div></div><div class="grid g-2"><div class="stack">';
+  SETTINGS.forEach(([title, fields]) => {
+    html += '<section class="panel"><div class="panel-head"><h2>' + esc(title) + '</h2></div><div class="form-grid">'
+      + fields.map(([k, l, u]) => '<label class="f">' + esc(l) + ' <small>' + esc(u) + '</small><input type="number" step="any" min="0" inputmode="decimal" data-set="' + k + '" value="' + esc(s[k]) + '"></label>').join('') + '</div></section>';
+  });
+  html += '<section class="panel"><div class="panel-head"><h2>Gebiet &amp; Zeitraum</h2></div><div class="form-grid">'
+    + '<label class="f full">Erlaubte Endorte <small>mit Komma trennen · Zahl = PLZ-Anfang, Text = im Zielort enthalten</small><input data-set="endorte" value="' + esc(s.endorte.join(', ')) + '"></label>'
+    + '<label class="f">KV ab Monat<input type="month" data-set="kvAb" value="' + esc(s.kvAb) + '"></label><label class="f">Erster Monat<input type="month" data-set="monatVon" value="' + esc(s.monatVon) + '"></label><label class="f">Letzter Monat<input type="month" data-set="monatBis" value="' + esc(s.monatBis) + '"></label></div>'
+    + '<p class="hint" style="margin-top:14px">Im Januar 2027 aktualisieren: Minijob-Grenze steigt auf 633 €, KV-Mindestbemessung und Zusatzbeitrag bei der Krankenkasse erfragen.</p></section></div><div class="stack">';
+  html += '<section class="panel"><div class="panel-head"><h2>Checkliste</h2><span class="small mute">' + D.checkliste.filter((c) => c.done).length + ' von ' + D.checkliste.length + ' erledigt</span></div>' + D.checkliste.map(todoRow).join('')
+    + '<form class="row" style="margin-top:12px" data-act-submit="add-todo"><input name="text" placeholder="Neue Aufgabe" aria-label="Neue Aufgabe" required style="flex:1 1 200px"><input name="bis" placeholder="bis" aria-label="bis wann" style="width:110px"><button class="btn sm" type="submit">' + ic('plus') + 'Hinzufügen</button></form></section>';
+  html += syncPanel();
+  const le = D.meta.lastExport;
+  html += '<section class="panel"><div class="panel-head"><h2>Datensicherung</h2></div>'
+    + '<p class="mute small" style="margin-bottom:12px">Zusätzlich zum Sync: Exportiere ab und zu eine Sicherung, z. B. in iCloud Drive. „Importieren“ führt eine Sicherung mit den Daten hier zusammen.' + (le ? ' Letzte Sicherung: ' + esc(fmtDate(le)) + '.' : ' <b style="color:var(--amber)">Noch keine Sicherung exportiert.</b>') + '</p>'
+    + '<div class="row"><button class="btn primary" data-act="export">' + ic('down2') + 'Sicherung exportieren</button><button class="btn" data-act="import">' + ic('up2') + 'Importieren</button><button class="btn danger" data-act="reset">Lokale Daten löschen</button></div>'
+    + (storageOk ? '' : '<p class="warn-line bad" style="margin-top:10px">' + ic('alert') + 'Speichern im Browser schlägt fehl.</p>') + '</section>';
+  html += '</div></div>';
+  return html;
+}
+
+// ---------- Sync ----------
+const SYNC_TEXT = { aus: 'nur auf diesem Gerät', abgemeldet: 'nicht angemeldet', laeuft: 'gleicht ab …', ok: 'synchron', offline: 'offline – wird nachgeholt', fehler: 'Sync-Fehler' };
+function showSync(st) {
+  const el = document.getElementById('syncline'); if (!el) return;
+  el.textContent = st.state === 'ok' ? 'synchron · ' + new Date(st.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : SYNC_TEXT[st.state];
+  el.style.color = st.state === 'fehler' ? 'var(--led-red)' : st.state === 'offline' ? 'var(--led-amber)' : '';
+  if (ui.view === 'setup' && !ui.form && !/INPUT/.test((document.activeElement || {}).tagName || '')) render();
+}
+function syncPanel() {
+  const st = Sync.status;
+  let h = '<section class="panel"><div class="panel-head"><h2>Sync zwischen iPhone und Mac</h2><span class="tag ' + (st.state === 'ok' ? 'good' : st.state === 'fehler' ? 'bad' : st.state === 'offline' ? 'warn' : '') + '">' + esc(SYNC_TEXT[st.state]) + '</span></div>';
+  if (!Sync.enabled) return h + '<p class="mute small">Noch nicht eingerichtet. Die App speichert nur auf diesem Gerät.</p></section>';
+  if (Sync.user) {
+    return h + '<p class="small" style="margin-bottom:12px">Angemeldet als <b>' + esc(Sync.user.email) + '</b>. Änderungen gleichen sich automatisch ab, auch nach Offline-Phasen.' + (st.state === 'fehler' ? ' <span style="color:var(--red)">' + esc(st.text) + '</span>' : '') + '</p>'
+      + '<div class="row"><button class="btn" data-act="sync-now">Jetzt abgleichen</button><button class="btn ghost" data-act="sync-out">Abmelden</button></div></section>';
+  }
+  return h + '<p class="mute small" style="margin-bottom:12px">Einmal pro Gerät anmelden, dann gleichen sich iPhone und Mac automatisch ab.' + (st.text ? ' <span style="color:var(--red)">' + esc(st.text) + '</span>' : '') + '</p>'
+    + '<form class="form-grid" data-act-submit="sync-login"><label class="f wide">E-Mail<input type="email" name="email" autocomplete="username" required></label><label class="f wide">Passwort<input type="password" name="pw" autocomplete="current-password" minlength="8" required></label>'
+    + '<div class="row full"><button class="btn primary" type="submit" name="mode" value="in">Anmelden</button><button class="btn" type="submit" name="mode" value="up">Konto anlegen</button></div><p class="warn-line bad full" id="syncerr" hidden></p></form></section>';
+}
+document.addEventListener('submit', async (e) => {
+  const f = e.target; if (f.dataset.actSubmit !== 'sync-login') return;
+  e.preventDefault();
+  const mode = (e.submitter && e.submitter.value) || 'in', err = document.getElementById('syncerr');
+  const email = f.elements.email.value.trim(), pw = f.elements.pw.value;
+  if (!email || pw.length < 8) { err.hidden = false; err.textContent = 'E-Mail und ein Passwort mit mindestens 8 Zeichen eingeben.'; return; }
+  try {
+    if (mode === 'up') { const r = await Sync.signUp(email, pw); if (r === 'bestaetigen') { toast('Bestätigungs-Mail verschickt. Link öffnen, dann hier anmelden.'); return; } }
+    else await Sync.signIn(email, pw);
+    toast('Angemeldet. Daten werden abgeglichen.'); render();
+  } catch (x) { err.hidden = false; err.textContent = x.status === 400 ? 'E-Mail oder Passwort falsch (oder E-Mail noch nicht bestätigt).' : 'Anmeldung fehlgeschlagen: ' + x.message; }
+});
+
+// ---------- Formulare (inline statt Dialog) ----------
+const STATUS_OPTS = Object.keys(STATUS).map((k) => [k, STATUS[k][0]]);
+const FORMS = {
+  day: { title: 'Tourtag anlegen', coll: 'days', fields: [['date', 'Datum', 'date', 'req'], ['start', 'Startstadt', 'text', '', 'z. B. Regensburg'], ['zug', 'Zug kommt an', 'time']] },
+  order: { title: 'Auftrag', coll: 'orders', fields: [['date', 'Datum', 'date', 'req'], ['status', 'Status', STATUS_OPTS], ['auftragsId', 'Auftrags-ID', 'text'], ['von', 'Von (Abholort)', 'text', 'wide', '85356 Freising (…)'], ['nach', 'Nach (Zielort)', 'text', 'wide', '93059 Regensburg (…)'], ['ab', 'Abholung ab', 'time'], ['bis', 'Lieferung bis', 'time'], ['km', 'km', 'num', 'req'], ['preis', 'Listenpreis €', 'num', 'req'], ['extra', 'Extra-Kosten €', 'num'], ['weg', 'Weg zum Abholort (Min.)', 'num', '', 'bei Ketten: vom letzten Ziel'], ['anreise', 'Anreise ab Haustür (Min.)', 'num', '', 'zählt nur beim 1. Auftrag'], ['heim', 'Heimreise (Min.)', 'num', '', 'zählt nur beim letzten'], ['notiz', 'Notiz', 'text', 'full']] },
+  einnahme: { title: 'Einnahme', coll: 'einnahmen', fields: [['datum', 'Datum (Tour/Rechnung)', 'date', 'req'], ['taetigkeit', 'Tätigkeit', [['Überführung', 'Überführung'], ['Shapeit', 'ShapeIt']]], ['auftraggeber', 'Auftraggeber', 'text', 'wide'], ['von', 'Von', 'text', 'wide'], ['nach', 'Nach', 'text', 'wide'], ['km', 'km', 'num'], ['stunden', 'Stunden gesamt', 'num'], ['brutto', 'Brutto (Rechnung) €', 'num', 'req'], ['rechnungsNr', 'Rechnungs-Nr.', 'text'], ['vorfin', 'Vorfinanzierung genutzt', 'check'], ['vorfinGebuehr', 'Gebühr Vorfinanzierung €', 'num'], ['erhaltenAm', 'Geld erhalten am', 'date'], ['notiz', 'Notiz', 'text', 'full']] },
+  ausgabe: { title: 'Ausgabe', coll: 'ausgaben', fields: [['id', 'Beleg-Nr.', 'text', 'req'], ['datum', 'Datum', 'date', 'req'], ['taetigkeit', 'Tätigkeit', [['Überführung', 'Überführung'], ['Shapeit', 'ShapeIt']]], ['kategorie', 'Kategorie', C.KATEGORIEN.map((k) => [k, k]), 'wide'], ['beschreibung', 'Beschreibung', 'text', 'wide'], ['betrag', 'Betrag €', 'num', 'req'], ['bezahltMit', 'Bezahlt mit', 'text'], ['ref', 'Gehört zu Rechnungs-Nr.', 'text', '', 'wird von der Auszahlung abgezogen']] },
+};
+function formBox() {
+  const f = FORMS[ui.form.kind], v = ui.form.values;
+  const fld = ([k, l, t, cls, ph]) => {
+    const c = cls === 'req' ? '' : cls || '', req = cls === 'req' ? ' required' : '', val = v[k] ?? '';
+    if (Array.isArray(t)) return '<label class="f ' + c + '">' + esc(l) + '<select name="' + k + '">' + t.map(([ov, ol]) => '<option value="' + esc(ov) + '"' + (val === ov ? ' selected' : '') + '>' + esc(ol) + '</option>').join('') + '</select></label>';
+    if (t === 'check') return '<label class="f check ' + c + '"><input type="checkbox" name="' + k + '"' + (val ? ' checked' : '') + '>' + esc(l) + '</label>';
+    const type = t === 'num' ? 'number" step="any" min="0" inputmode="decimal' : t;
+    return '<label class="f ' + c + '">' + esc(l) + (ph && t === 'num' ? ' <small>' + esc(ph) + '</small>' : '') + '<input type="' + type + '" name="' + k + '" value="' + esc(val) + '"' + (ph && t !== 'num' ? ' placeholder="' + esc(ph) + '"' : '') + req + '></label>';
+  };
+  return '<form class="formbox" id="theform" data-act-submit="save-form" novalidate><div class="panel-head"><h3>' + esc(f.title) + (ui.form.k ? ' bearbeiten' : ' neu') + '</h3><button type="button" class="btn icon sm ghost" data-act="close-form" aria-label="Schließen">' + ic('x') + '</button></div>'
+    + '<div class="form-grid">' + f.fields.map(fld).join('') + '</div><p class="warn-line bad" id="formerr" style="margin-top:10px" hidden></p>'
+    + '<div class="row" style="margin-top:14px"><button class="btn primary" type="submit">' + ic('check') + 'Speichern</button><button class="btn" type="button" data-act="close-form">Abbrechen</button></div></form>';
+}
+function openForm(kind, k) {
+  const f = FORMS[kind], item = k ? D[f.coll].find((x) => x._k === k) : null;
+  let values = item ? clone(item) : {};
+  if (!item) {
+    if (kind === 'order') {
+      const prev = D.orders.filter((o) => o.date === ui.day && o.status !== 'abgesagt').pop();
+      values = { date: ui.day || todayISO(), status: 'idee', von: prev ? prev.nach : '', weg: prev ? 0 : 15, anreise: prev ? 0 : '', heim: '', extra: 0 };
+    }
+    if (kind === 'day') values = { date: todayISO(), zug: '07:30' };
+    if (kind === 'einnahme') values = { datum: todayISO(), taetigkeit: 'Überführung', auftraggeber: 'ONLOGIST' };
+    if (kind === 'ausgabe') values = { id: C.nextId('B-', D.ausgaben), datum: todayISO(), taetigkeit: 'Überführung', kategorie: C.KATEGORIEN[0] };
+  }
+  ui.form = { kind, k, values };
+  if (kind === 'order' && item) ui.day = item.date;
+  render();
+  const el = document.getElementById('theform');
+  if (el) { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); const first = el.querySelector('input,select'); first && first.focus({ preventScroll: true }); }
+}
+function saveForm(form) {
+  const f = FORMS[ui.form.kind], out = {}, err = document.getElementById('formerr');
+  for (const [k, l, t, cls] of f.fields) {
+    const el = form.elements[k];
+    let v = t === 'check' ? el.checked : el.value.trim();
+    if (t === 'num' && v !== '') { v = parseFloat(String(v).replace(',', '.')); if (!isFinite(v)) { err.hidden = false; err.textContent = '„' + l + '“ ist keine Zahl.'; el.focus(); return; } }
+    if (cls === 'req' && (v === '' || v == null)) { err.hidden = false; err.textContent = 'Bitte „' + l + '“ ausfüllen.'; el.focus(); return; }
+    out[k] = v;
+  }
+  if (ui.form.kind === 'day' && D.days.some((d) => d.date === out.date && d._k !== ui.form.k)) { err.hidden = false; err.textContent = 'Für dieses Datum gibt es schon einen Tourtag.'; return; }
+  if (ui.form.kind === 'einnahme' && out.vorfin && !out.vorfinGebuehr) out.vorfinGebuehr = C.r2(out.brutto * D.settings.vorfinQuote);
+  const coll = D[f.coll];
+  if (ui.form.k) Object.assign(coll.find((x) => x._k === ui.form.k), out);
+  else {
+    if (ui.form.kind === 'einnahme') out.id = C.nextId('E-', D.einnahmen);
+    if (ui.form.kind === 'order') { out.id = 'o' + newKey(); out.seq = D.orders.filter((x) => x.date === out.date).reduce((m, x) => Math.max(m, x.seq ?? -1), -1) + 1; }
+    coll.push(Object.assign({ _k: newKey() }, out));
+  }
+  if (ui.form.kind === 'order' || ui.form.kind === 'day') { ui.day = out.date; if (!D.days.some((d) => d.date === out.date)) D.days.push({ _k: newKey(), date: out.date, start: ort(out.von), zug: '07:30' }); }
+  const kind = ui.form.kind;
+  ui.form = null; pendingRender = false; save(); render();
+  toast(FORMS[kind].title + ' gespeichert.');
+}
+
+// ---------- Aktionen ----------
+const ACT = {
+  go: (d) => { ui.view = d.v; ui.form = null; history.replaceState(null, '', '#' + d.v); render(); document.getElementById('main').focus({ preventScroll: true }); window.scrollTo(0, 0); },
+  'open-day': (d) => { ui.view = 'touren'; ui.day = d.date; ui.form = null; history.replaceState(null, '', '#touren/' + d.date); render(); },
+  form: (d) => openForm(d.kind, d.k),
+  'close-form': () => { ui.form = null; pendingRender = false; render(); },
+  buch: (d) => { ui.buch = d.t; ui.form = null; render(); },
+  move: (d) => {
+    const o = D.orders.find((x) => x._k === d.k), same = D.orders.filter((x) => x.date === o.date && x.status !== 'abgesagt').sort((a, b) => a.seq - b.seq);
+    const other = same[same.indexOf(o) + +d.dir]; if (!other) return;
+    [o.seq, other.seq] = [other.seq, o.seq]; save(); render();
+  },
+  'del-order': (d) => { const o = D.orders.find((x) => x._k === d.k); if (confirm('Auftrag ' + (o.auftragsId || ort(o.von)) + ' löschen? Das lässt sich nicht rückgängig machen. (Tipp: Status „abgesagt“ behält ihn.)')) { D.orders = D.orders.filter((x) => x !== o); save(); render(); } },
+  'del-day': (d) => {
+    const day = D.days.find((x) => x._k === d.k), n = D.orders.filter((o) => o.date === day.date).length;
+    if (confirm('Tourtag ' + fmtDate(day.date) + (n ? ' mit ' + n + ' Auftrag/Aufträgen' : '') + ' löschen? Das lässt sich nicht rückgängig machen.')) { D.days = D.days.filter((x) => x !== day); D.orders = D.orders.filter((o) => o.date !== day.date); ui.day = null; save(); render(); }
+  },
+  del: (d) => {
+    const it = D[d.c].find((x) => x._k === d.k);
+    const belege = d.c === 'einnahmen' && it.rechnungsNr ? D.ausgaben.filter((a) => a.ref === it.rechnungsNr) : [];
+    if (!confirm((it.id || 'Eintrag') + (belege.length ? ' und ' + belege.length + ' zugehörige Belege (' + [...new Set(belege.map((a) => a.id))].join(', ') + ')' : '') + ' löschen? Das lässt sich nicht rückgängig machen.')) return;
+    D[d.c] = D[d.c].filter((x) => x !== it);
+    if (belege.length) D.ausgaben = D.ausgaben.filter((a) => !belege.includes(a));
+    if (d.c === 'einnahmen' && it.auftragRef) { const o = D.orders.find((x) => x.id === it.auftragRef); if (o) o.gebucht = false; }
+    save(); render();
+  },
+  book: async (d) => {
+    if (Sync.user) await Sync.syncNow(); // neueste Nummern vom anderen Gerät holen
+    const o = D.orders.find((x) => x._k === d.k);
+    if (o.gebucht) return render();
+    const b = C.bucheAuftrag(o, D, D.settings);
+    D.einnahmen.push(Object.assign({ _k: newKey() }, b.einnahme));
+    b.ausgaben.forEach((a) => D.ausgaben.push(Object.assign({ _k: newKey() }, a)));
+    o.gebucht = true; save(); render();
+    toast(b.einnahme.id + ' und Beleg ' + b.ausgaben[0].id + ' angelegt. „Geld erhalten am“ nach Zahlungseingang eintragen.');
+  },
+  todo: (d, el) => { const c = D.checkliste.find((x) => x._k === d.k); c.done = el.checked; save(); render(); },
+  export: () => {
+    const blob = new Blob([JSON.stringify(D, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ueberfuehrung-sicherung-' + todayISO() + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    D.meta.lastExport = todayISO(); save(); render(); toast('Sicherung gespeichert.');
+  },
+  import: () => document.getElementById('importFile').click(),
+  inbox: () => document.getElementById('inboxFile').click(),
+  reset: () => {
+    if (Sync.user) return toast('Erst abmelden: Gelöschtes würde sonst auch auf deinen anderen Geräten gelöscht.');
+    if (confirm('Alle Daten in diesem Browser löschen? Ohne exportierte Sicherung sind sie weg.')) { D = ensureKeys(clone(SEED)); persist(); lastSaved = clone(D); ui.day = null; render(); toast('Lokale Daten gelöscht.'); }
+  },
+  'sync-now': () => Sync.syncNow(),
+  'sync-out': () => { if (confirm('Abmelden? Die Daten bleiben auf diesem Gerät, werden aber nicht mehr abgeglichen.')) Sync.signOut(); },
+  csv: (d) => {
+    const n2 = (x) => (x === '' || x == null ? '' : String(C.r2(+x)).replace('.', ','));
+    const q = (x) => '"' + String(x ?? '').replace(/"/g, '""') + '"';
+    let rows;
+    if (d.c === 'einnahmen') rows = [['Nr', 'Datum', 'Tätigkeit', 'Auftraggeber', 'Von', 'Nach', 'km', 'Stunden', 'Brutto', 'Auszahlung', 'Vorfinanzierung', 'Rechnungs-Nr', 'Geld erhalten am', 'Notiz']].concat(D.einnahmen.map((e) => [e.id, fmtDate(e.datum), e.taetigkeit, e.auftraggeber, e.von, e.nach, e.km, n2(e.stunden), n2(e.brutto), n2(C.auszahlung(e, D.ausgaben)), e.vorfin ? n2(e.vorfinGebuehr) : '', e.rechnungsNr, fmtDate(e.erhaltenAm), e.notiz]));
+    else if (d.c === 'ausgaben') rows = [['Beleg', 'Datum', 'Tätigkeit', 'Kategorie', 'Beschreibung', 'Betrag', 'Bezahlt mit', 'Rechnungs-Nr']].concat(D.ausgaben.map((a) => [a.id, fmtDate(a.datum), a.taetigkeit, a.kategorie, a.beschreibung, n2(a.betrag), a.bezahltMit, a.ref]));
+    else { const ys = [...new Set([D.settings.monatVon.slice(0, 4), D.settings.monatBis.slice(0, 4)])], E = ys.map((y) => C.euer(D, y)); rows = [['Position'].concat(ys), ['Einnahmen Überführung'].concat(E.map((e) => n2(e.einnahmen['Überführung']))), ['Einnahmen ShapeIt'].concat(E.map((e) => n2(e.einnahmen['Shapeit'])))].concat(C.KATEGORIEN.map((k) => [k].concat(E.map((e) => n2(e.ausgaben[k]))))).concat([['Gewinn'].concat(E.map((e) => n2(e.gewinn)))]); }
+    const blob = new Blob(['﻿' + rows.map((r) => r.map(q).join(';')).join('\r\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = d.c + '-' + todayISO() + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  },
+};
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.tagName === 'FORM' || (el.tagName === 'INPUT' && el.type === 'checkbox')) return;
+  if (el.tagName === 'A') e.preventDefault();
+  ACT[el.dataset.act] && ACT[el.dataset.act](el.dataset, el);
+});
+document.addEventListener('submit', (e) => {
+  const f = e.target; e.preventDefault();
+  if (f.dataset.actSubmit === 'save-form') saveForm(f);
+  if (f.dataset.actSubmit === 'add-todo') { D.checkliste.push({ _k: newKey(), done: false, text: f.elements.text.value.trim(), bis: f.elements.bis.value.trim() }); save(); render(); }
+});
+document.addEventListener('change', (e) => {
+  const el = e.target, ds = el.dataset;
+  if (ds.act === 'todo') return ACT.todo(ds, el);
+  if (ds.day) { const day = D.days.find((x) => x._k === ds.k); day[ds.day] = el.value; save(); render(); }
+  else if (ds.status) { const o = D.orders.find((x) => x._k === ds.status); o.status = el.value; save(); render(); if (el.value === 'erledigt' && !o.gebucht) toast('Erledigt – jetzt „In Buchhaltung übernehmen“ klicken.'); }
+  else if (ds.ein) { const it = D.einnahmen.find((x) => x._k === ds.k); it[ds.ein] = el.value; if (ds.ein === 'erhaltenAm' && el.value) it.bezahlt = true; save(); render(); }
+  else if (ds.kvg) { const v = parseFloat(String(el.value).replace(',', '.')); if (isFinite(v)) D.kvGezahlt[ds.kvg] = v; else delete D.kvGezahlt[ds.kvg]; save(); render(); }
+  else if (ds.set) {
+    const k = ds.set;
+    if (k === 'endorte') D.settings.endorte = el.value.split(',').map((x) => x.trim()).filter(Boolean);
+    else if (['kvAb', 'monatVon', 'monatBis'].includes(k)) { if (el.value) D.settings[k] = el.value; }
+    else { const v = parseFloat(String(el.value).replace(',', '.')); if (isFinite(v) && v >= 0) D.settings[k] = v; else { toast('Bitte eine Zahl eingeben.'); } }
+    save(); render(); toast('Einstellung gespeichert.');
+  }
+});
+// Prüfen rechnet beim Tippen; nur die Tafel neu zeichnen, Fokus bleibt im Feld
+document.addEventListener('input', (e) => {
+  const k = e.target.dataset.q; if (!k) return;
+  ui.q[k] = k === 'nach' ? e.target.value : e.target.value;
+  const main = document.getElementById('main');
+  const tmp = document.createElement('div'); tmp.innerHTML = vCheck();
+  main.querySelector('.tafel').replaceWith(tmp.querySelector('.tafel'));
+});
+document.getElementById('importFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    const d = JSON.parse(await file.text());
+    if (!d || !Array.isArray(d.orders) || !Array.isArray(d.einnahmen) || !Array.isArray(d.ausgaben) || !d.settings) throw new Error('keine Sicherung dieser App');
+    if (!confirm('Sicherung vom ' + (d.meta && d.meta.lastExport ? fmtDate(d.meta.lastExport) : 'unbekannten Datum') + ' mit den Daten hier zusammenführen? Bei gleichen Einträgen gewinnt die neuere Änderung.')) return;
+    const merged = C.mergeDocs(D, ensureKeys(d));
+    D = ensureKeys(merged.doc); save(); ui.day = null; render(); toast('Sicherung übernommen.' + (merged.warnungen.length ? ' ' + merged.warnungen.join(' · ') : ''));
+  } catch (err) { toast('Import fehlgeschlagen: ' + err.message); }
+});
+let wasNarrow = window.innerWidth < 860;
+window.addEventListener('resize', () => { const n = window.innerWidth < 860; if (n !== wasNarrow) { wasNarrow = n; if (ui.view === 'start') render(); } });
+// Auftrags-Datei vom Auto-Check (auftraege-neu.json): neue Aufträge als „Idee“ einsortieren
+document.getElementById('inboxFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    const r = C.mergeInbox(D, JSON.parse(await file.text()), newKey);
+    D.days = r.days; D.orders = r.orders; save();
+    if (r.neu.length) { ui.view = 'touren'; ui.day = r.neu[0].date; history.replaceState(null, '', '#touren/' + ui.day); }
+    render();
+    toast(r.neu.length + ' neu' + (r.doppelt.length ? ', ' + r.doppelt.length + ' schon vorhanden' : '') + (r.fehler.length ? ', ' + r.fehler.length + ' fehlerhaft übersprungen' : '') + '.');
+  } catch (err) { toast('Laden fehlgeschlagen: ' + err.message); }
+});
+window.addEventListener('hashchange', () => { fromHash(); ui.form = null; render(); });
+document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender && !ui.form && !/INPUT|SELECT|TEXTAREA/.test((document.activeElement || {}).tagName || '')) { pendingRender = false; render(); } }, 0));
+render();
+Sync.init({ getDoc: () => D, setDoc: applyRemote, onStatus: showSync });
+// Offline-Start und „Zum Home-Bildschirm/Dock“: nur über https oder localhost
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
